@@ -194,10 +194,12 @@ func (c *Configurator) create() (*Scheduler, error) {
 	)
 
 	return &Scheduler{
-		SchedulerCache:  c.schedulerCache,
-		Algorithm:       algo,
-		Extenders:       extenders,
-		Profiles:        profiles,
+		SchedulerCache: c.schedulerCache,
+		// hantingtodo: 这里定义了调度算法的具体实现
+		Algorithm: algo,
+		Extenders: extenders,
+		Profiles:  profiles,
+		// hantingtodo: 这里初始化时, 设置了NextPode方法的具体实现
 		NextPod:         internalqueue.MakeNextPodFunc(podQueue),
 		Error:           MakeDefaultErrorFunc(c.client, c.informerFactory.Core().V1().Pods().Lister(), podQueue, c.schedulerCache),
 		StopEverything:  c.StopEverything,

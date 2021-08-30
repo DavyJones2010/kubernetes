@@ -78,6 +78,8 @@ type Scheduler struct {
 	// is available. We don't use a channel for this, because scheduling
 	// a pod may take some amount of time and we don't want pods to get
 	// stale while they sit in a channel.
+	// hantingtodo: 这里定义了一个方法变量, 名字叫NextPod, 返回QueuedPodInfo;
+	// hantingtodo: 具体NextPod的实现是在初始化Scheduler时生成.
 	NextPod func() *framework.QueuedPodInfo
 
 	// Error is called if there is an error. It is passed the pod in
