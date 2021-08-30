@@ -84,6 +84,7 @@ for more information about scheduling and the kube-scheduler component.`,
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 				os.Exit(1)
 			}
+			// hantingtodo: 调度入口
 			if err := runCommand(cmd, opts, registryOptions...); err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 				os.Exit(1)
@@ -126,6 +127,7 @@ func runCommand(cmd *cobra.Command, opts *options.Options, registryOptions ...Op
 		cancel()
 	}()
 
+	// hantingtodo: new出来调度器, 核心的nexPod实现, scheduler实现都在这里
 	cc, sched, err := Setup(ctx, opts, registryOptions...)
 	if err != nil {
 		return err
@@ -197,6 +199,7 @@ func Run(ctx context.Context, cc *schedulerserverconfig.CompletedConfig, sched *
 	cc.InformerFactory.WaitForCacheSync(ctx.Done())
 
 	// If leader election is enabled, runCommand via LeaderElector until done and exit.
+	// hantingtodo: scheduler选主逻辑, 后续要细看下具体是怎么实现的
 	if cc.LeaderElection != nil {
 		cc.LeaderElection.Callbacks = leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
@@ -227,6 +230,7 @@ func Run(ctx context.Context, cc *schedulerserverconfig.CompletedConfig, sched *
 
 	// Leader election is disabled, so runCommand inline until done.
 	close(waitingForLeader)
+	// hantingtodo: 执行scheduler器
 	sched.Run(ctx)
 	return fmt.Errorf("finished without leader elect")
 }

@@ -54,6 +54,7 @@ func (b DefaultBinder) Bind(ctx context.Context, state *framework.CycleState, p 
 		ObjectMeta: metav1.ObjectMeta{Namespace: p.Namespace, Name: p.Name, UID: p.UID},
 		Target:     v1.ObjectReference{Kind: "Node", Name: nodeName},
 	}
+	// hantingtodo: 调用apiserver接口, 将pod绑定到node上
 	err := b.handle.ClientSet().CoreV1().Pods(binding.Namespace).Bind(ctx, binding, metav1.CreateOptions{})
 	if err != nil {
 		return framework.AsStatus(err)

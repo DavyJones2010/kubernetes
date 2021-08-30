@@ -79,7 +79,7 @@ type Scheduler struct {
 	// a pod may take some amount of time and we don't want pods to get
 	// stale while they sit in a channel.
 	// hantingtodo: 这里定义了一个方法变量, 名字叫NextPod, 返回QueuedPodInfo;
-	// hantingtodo: 具体NextPod的实现是在初始化Scheduler时生成.
+	// hantingtodo: 具体NextPod的实现是在初始化Scheduler时生成. pkg/scheduler/factory.go:203 internalqueue.MakeNextPodFunc(podQueue)
 	NextPod func() *framework.QueuedPodInfo
 
 	// Error is called if there is an error. It is passed the pod in
@@ -372,6 +372,7 @@ func initPolicyFromConfigMap(client clientset.Interface, policyRef *schedulerapi
 // Run begins watching and scheduling. It starts scheduling and blocked until the context is done.
 func (sched *Scheduler) Run(ctx context.Context) {
 	sched.SchedulingQueue.Run()
+	// hantingtodo: 无限循环, 从queue中取出, 依次调度pod
 	wait.UntilWithContext(ctx, sched.scheduleOne, 0)
 	sched.SchedulingQueue.Close()
 }
@@ -498,6 +499,7 @@ func (sched *Scheduler) finishBinding(fwk framework.Framework, assumed *v1.Pod, 
 
 // scheduleOne does the entire scheduling workflow for a single pod. It is serialized on the scheduling algorithm's host fitting.
 func (sched *Scheduler) scheduleOne(ctx context.Context) {
+	// hantingtodo: 单个pod调度入口
 	podInfo := sched.NextPod()
 	// pod could be nil when schedulerQueue is closed
 	if podInfo == nil || podInfo.Pod == nil {

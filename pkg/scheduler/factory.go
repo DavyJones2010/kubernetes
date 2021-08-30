@@ -99,6 +99,7 @@ func (c *Configurator) create() (*Scheduler, error) {
 		var ignorableExtenders []framework.Extender
 		for ii := range c.extenders {
 			klog.V(2).InfoS("Creating extender", "extender", c.extenders[ii])
+			// hantingtodo: 这里默认scheduler进行http endpoint的扩展
 			extender, err := NewHTTPExtender(&c.extenders[ii])
 			if err != nil {
 				return nil, err
@@ -193,6 +194,7 @@ func (c *Configurator) create() (*Scheduler, error) {
 		c.percentageOfNodesToScore,
 	)
 
+	// hantingtodo: new出来scheduler对象
 	return &Scheduler{
 		SchedulerCache: c.schedulerCache,
 		// hantingtodo: 这里定义了调度算法的具体实现

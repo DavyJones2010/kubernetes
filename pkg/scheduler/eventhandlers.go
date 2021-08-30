@@ -283,6 +283,7 @@ func addAllEventHandlers(
 			FilterFunc: func(obj interface{}) bool {
 				switch t := obj.(type) {
 				case *v1.Pod:
+					// hantingtodo: 如果pod已经有nodeName, 则加入到已调度成功的cache中
 					return assignedPod(t)
 				case cache.DeletedFinalStateUnknown:
 					if pod, ok := t.Obj.(*v1.Pod); ok {
@@ -308,6 +309,7 @@ func addAllEventHandlers(
 			FilterFunc: func(obj interface{}) bool {
 				switch t := obj.(type) {
 				case *v1.Pod:
+					// hantingtodo: 调度条件的过滤, 1. 如果pod已经有nodeName, 则不inform, 即不加入queue中; 2. 指定了scheduerName与自身的name不同的, 则不inform
 					return !assignedPod(t) && responsibleForPod(t, sched.Profiles)
 				case cache.DeletedFinalStateUnknown:
 					if pod, ok := t.Obj.(*v1.Pod); ok {
@@ -320,6 +322,7 @@ func addAllEventHandlers(
 					return false
 				}
 			},
+			// hantingtodo: inform到符合调度条件的pod, 则加入到queue中
 			Handler: cache.ResourceEventHandlerFuncs{
 				AddFunc:    sched.addPodToSchedulingQueue,
 				UpdateFunc: sched.updatePodInSchedulingQueue,
