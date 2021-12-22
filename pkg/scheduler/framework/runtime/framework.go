@@ -462,6 +462,7 @@ func (f *frameworkImpl) QueueSortFunc() framework.LessFunc {
 // anything but Success. If a non-success status is returned, then the scheduling
 // cycle is aborted.
 func (f *frameworkImpl) RunPreFilterPlugins(ctx context.Context, state *framework.CycleState, pod *v1.Pod) (status *framework.Status) {
+	// hantingtodo: 这里preFilter主要是干嘛的? 造成的影响是?
 	startTime := time.Now()
 	defer func() {
 		metrics.FrameworkExtensionPointDuration.WithLabelValues(preFilter, status.Code().String(), f.profileName).Observe(metrics.SinceInSeconds(startTime))
@@ -667,6 +668,7 @@ func (f *frameworkImpl) RunFilterPluginsWithNominatedPods(ctx context.Context, s
 	// the nominated pods are treated as not running. We can't just assume the
 	// nominated pods are running because they are not running right now and in fact,
 	// they may end up getting scheduled to a different node.
+	// hantingtodo: 需要仔细思考下为啥需要2次?
 	for i := 0; i < 2; i++ {
 		stateToUse := state
 		nodeInfoToUse := info
@@ -906,6 +908,7 @@ func (f *frameworkImpl) runBindPlugin(ctx context.Context, bp framework.BindPlug
 		return bp.Bind(ctx, state, pod, nodeName)
 	}
 	startTime := time.Now()
+	// hantingtodo: 执行 DefaultBinder.Bind
 	status := bp.Bind(ctx, state, pod, nodeName)
 	f.metricsRecorder.observePluginDurationAsync(bind, bp.Name(), status, metrics.SinceInSeconds(startTime))
 	return status

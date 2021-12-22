@@ -253,6 +253,7 @@ func Fits(pod *v1.Pod, nodeInfo *framework.NodeInfo, enablePodOverhead bool) []I
 	return fitsRequest(computePodResourceRequest(pod, enablePodOverhead), nodeInfo, nil, nil)
 }
 
+// hantingtodo: 校验node资源是否足够调度给pod
 func fitsRequest(podRequest *preFilterState, nodeInfo *framework.NodeInfo, ignoredExtendedResources, ignoredResourceGroups sets.String) []InsufficientResource {
 	insufficientResources := make([]InsufficientResource, 0, 4)
 
@@ -274,6 +275,8 @@ func fitsRequest(podRequest *preFilterState, nodeInfo *framework.NodeInfo, ignor
 		return insufficientResources
 	}
 
+	// hantingtodo: 校验pod请求的cpu是否 >= (nc上剩余的可用cpu + 本次调度预占的cpu)
+	// hantingtodo: 什么时候会是requested? 如果bind失败, requested资源如何回滚?
 	if podRequest.MilliCPU > (nodeInfo.Allocatable.MilliCPU - nodeInfo.Requested.MilliCPU) {
 		insufficientResources = append(insufficientResources, InsufficientResource{
 			v1.ResourceCPU,

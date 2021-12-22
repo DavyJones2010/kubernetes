@@ -48,13 +48,14 @@ func (b DefaultBinder) Name() string {
 }
 
 // Bind binds pods to nodes using the k8s client.
+// hantingtodo: 被 pkg/scheduler/framework/runtime/framework.go:906 调用到
 func (b DefaultBinder) Bind(ctx context.Context, state *framework.CycleState, p *v1.Pod, nodeName string) *framework.Status {
 	klog.V(3).InfoS("Attempting to bind pod to node", "pod", klog.KObj(p), "node", nodeName)
+	// hantingtodo: 调用apiserver接口, 将pod绑定到node上, 具体内容是 {podeName, podNamespace, podUid, nodeName}
 	binding := &v1.Binding{
 		ObjectMeta: metav1.ObjectMeta{Namespace: p.Namespace, Name: p.Name, UID: p.UID},
 		Target:     v1.ObjectReference{Kind: "Node", Name: nodeName},
 	}
-	// hantingtodo: 调用apiserver接口, 将pod绑定到node上
 	err := b.handle.ClientSet().CoreV1().Pods(binding.Namespace).Bind(ctx, binding, metav1.CreateOptions{})
 	if err != nil {
 		return framework.AsStatus(err)

@@ -94,6 +94,7 @@ func (g *genericScheduler) Schedule(ctx context.Context, extenders []framework.E
 	trace := utiltrace.New("Scheduling", utiltrace.Field{Key: "namespace", Value: pod.Namespace}, utiltrace.Field{Key: "name", Value: pod.Name})
 	defer trace.LogIfLong(100 * time.Millisecond)
 
+	// hantingtodo: 之类snapshot是用来干啥的?
 	if err := g.snapshot(); err != nil {
 		return result, err
 	}
@@ -212,6 +213,7 @@ func (g *genericScheduler) evaluateNominatedNode(ctx context.Context, extenders 
 
 // Filters the nodes to find the ones that fit the pod based on the framework
 // filter plugins and filter extenders.
+// hantingtodo: 调度单个pod
 func (g *genericScheduler) findNodesThatFitPod(ctx context.Context, extenders []framework.Extender, fwk framework.Framework, state *framework.CycleState, pod *v1.Pod) ([]*v1.Node, framework.Diagnosis, error) {
 	diagnosis := framework.Diagnosis{
 		NodeToStatusMap:      make(framework.NodeToStatusMap),
@@ -220,6 +222,7 @@ func (g *genericScheduler) findNodesThatFitPod(ctx context.Context, extenders []
 
 	// Run "prefilter" plugins.
 	s := fwk.RunPreFilterPlugins(ctx, state, pod)
+	// hantingtodo: allNodes的资源数据, 与实际etcd的数据是否一致? 延迟情况怎样?
 	allNodes, err := g.nodeInfoSnapshot.NodeInfos().List()
 	if err != nil {
 		return nil, diagnosis, err
@@ -241,6 +244,8 @@ func (g *genericScheduler) findNodesThatFitPod(ctx context.Context, extenders []
 	// "NominatedNodeName" can potentially be set in a previous scheduling cycle as a result of preemption.
 	// This node is likely the only candidate that will fit the pod, and hence we try it first before iterating over all nodes.
 	if len(pod.Status.NominatedNodeName) > 0 && feature.DefaultFeatureGate.Enabled(features.PreferNominatedNode) {
+		// hantingtodo: 指定node调度, 通常发生在抢占调度里, ;
+		// 如果开启了 PreferNominatedNode 功能, 直接在这里
 		feasibleNodes, err := g.evaluateNominatedNode(ctx, extenders, pod, fwk, state, diagnosis)
 		if err != nil {
 			klog.ErrorS(err, "Evaluation failed on nominated node", "pod", klog.KObj(pod), "node", pod.Status.NominatedNodeName)
@@ -270,12 +275,14 @@ func (g *genericScheduler) findNodesThatPassFilters(
 	pod *v1.Pod,
 	diagnosis framework.Diagnosis,
 	nodes []*framework.NodeInfo) ([]*v1.Node, error) {
+	// hantingtodo: numFeasibleNodesToFind, 这个跟ECS的预调度500个很相似, 但ECS是为了; k8s这里减少nc数量是为了?
 	numNodesToFind := g.numFeasibleNodesToFind(int32(len(nodes)))
 
 	// Create feasible list with enough space to avoid growing it
 	// and allow assigning.
 	feasibleNodes := make([]*v1.Node, numNodesToFind)
 
+	// hantingtodo: 在什么时候会有filterPlugin? 默认调度(即不是framework扩展方式)是否会添加filterPlugin? 默认scheduler会有哪些filterPlugin?
 	if !fwk.HasFilterPlugins() {
 		length := len(nodes)
 		for i := range feasibleNodes {

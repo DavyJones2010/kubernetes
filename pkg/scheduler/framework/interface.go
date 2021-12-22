@@ -489,6 +489,7 @@ type BindPlugin interface {
 
 // Framework manages the set of plugins in use by the scheduling framework.
 // Configured plugins are called at specified points in a scheduling context.
+// hantingtodo: 定义了调度framework的结构, 里边各个阶段的plugin
 type Framework interface {
 	Handle
 	// QueueSortFunc returns the function to sort pods in scheduling queue

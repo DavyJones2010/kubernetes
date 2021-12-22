@@ -38,6 +38,7 @@ var (
 // "ttl" is how long the assumed pod will get expired.
 // "stop" is the channel that would close the background goroutine.
 func New(ttl time.Duration, stop <-chan struct{}) Cache {
+	// hantingtodo: schedulerCache后台任务, 每30s执行一次, 看下哪些pod被assume, 并且已经超时, 把这些pod信息
 	cache := newSchedulerCache(ttl, cleanAssumedPeriod, stop)
 	cache.run()
 	return cache
@@ -422,6 +423,7 @@ func (cache *schedulerCache) ForgetPod(pod *v1.Pod) error {
 
 // Assumes that lock is already acquired.
 func (cache *schedulerCache) addPod(pod *v1.Pod) {
+	// hantingtodo: 调度结束, 进入assume流程, 扣减调度缓存中的node资源: 将pod放到node的podList里
 	n, ok := cache.nodes[pod.Spec.NodeName]
 	if !ok {
 		n = newNodeInfoListItem(framework.NewNodeInfo())
@@ -723,16 +725,19 @@ func (cache *schedulerCache) cleanupAssumedPods(now time.Time) {
 	defer cache.updateMetrics()
 
 	// The size of assumedPods should be small
+	// hantingtodo: cache.assumedPods 记录了所有已完成调度, 已经扣减了调度缓存的资源, 等待实际bindToNode的pod
 	for key := range cache.assumedPods {
 		ps, ok := cache.podStates[key]
 		if !ok {
 			klog.Fatal("Key found in assumed set but not in podStates. Potentially a logical error.")
 		}
+		// hantingfixme: 什么时候会将bindingFinished同步过来? 具体同步链路是怎样的?
 		if !ps.bindingFinished {
 			klog.V(5).Infof("Couldn't expire cache for pod %v/%v. Binding is still in progress.",
 				ps.pod.Namespace, ps.pod.Name)
 			continue
 		}
+		// hantingtodo: 如果pod在assume状态已经放了很久, 超时了, 则需要把pod状态
 		if now.After(*ps.deadline) {
 			klog.Warningf("Pod %s/%s expired", ps.pod.Namespace, ps.pod.Name)
 			if err := cache.expirePod(key, ps); err != nil {

@@ -27,6 +27,7 @@ import (
 )
 
 // getDefaultPlugins returns the default set of plugins.
+// hantingtodo: 这里实现了scheduler的plugin重构, 将默认的filter/binding等, 都声明好, 放在这些plugin里
 func getDefaultPlugins() *v1beta1.Plugins {
 	plugins := &v1beta1.Plugins{
 		QueueSort: &v1beta1.PluginSet{

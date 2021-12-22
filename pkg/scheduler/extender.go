@@ -390,6 +390,9 @@ func (h *HTTPExtender) Bind(binding *v1.Binding) error {
 		// This shouldn't happen as this extender wouldn't have become a Binder.
 		return fmt.Errorf("unexpected empty bindVerb in extender")
 	}
+	// hantingtodo: 通过HTTP发送给??? 远端, 进行bind处理. 请求结构很简单, {podName, podNamespace, podUid, nodeName}
+	// hantingtodo: 这里extender实际不会具体执行bind的操作, 后边会在调度的bindPlugins里, 往apiserver发送bind信息.
+	// hantingfixme: 具体远端的http地址是啥? 在什么情况下需要这个extender?
 	req := &extenderv1.ExtenderBindingArgs{
 		PodName:      binding.Name,
 		PodNamespace: binding.Namespace,

@@ -379,6 +379,7 @@ type NodeInfo struct {
 	// applied to each container's CPU and memory requests. This does not reflect
 	// the actual resource requests for this node, but is used to avoid scheduling
 	// many zero-request pods onto one node.
+	// hantingfixme: 为啥这里需要有nonZeroRequested? 在什么情况下会有zeroRequest?
 	NonZeroRequested *Resource
 	// We store allocatedResources (which is Node.Status.Allocatable.*) explicitly
 	// as int64, to avoid conversions and accessing map.
@@ -582,6 +583,9 @@ func (n *NodeInfo) String() string {
 // Consider using this instead of AddPod if a PodInfo is already computed.
 func (n *NodeInfo) AddPodInfo(podInfo *PodInfo) {
 	res, non0CPU, non0Mem := calculateResource(podInfo.Pod)
+	// hantingtodo: 调度结束, assume流程里, 在这里扣减调度缓存里的资源. 不过扣减的缓存资源是放到n.Requested里.
+	// hantingtodo: 代表调度器已经把pod预分配给了nc. 后续调度其他pod会看到的是预分配之后的资源值;
+	// hantingtodo: 但 1. 真正nc上如果bind失败, 会在什么时候把这个pod资源归还回去? 2. 有没有对账机制? 防止调度缓存数据与实际情况不一致?
 	n.Requested.MilliCPU += res.MilliCPU
 	n.Requested.Memory += res.Memory
 	n.Requested.EphemeralStorage += res.EphemeralStorage
@@ -666,7 +670,7 @@ func (n *NodeInfo) RemovePod(pod *v1.Pod) error {
 			n.Pods = n.Pods[:len(n.Pods)-1]
 			// reduce the resource data
 			res, non0CPU, non0Mem := calculateResource(pod)
-
+			// hantingtodo: 在这里将assumed的资源归还回nc的资源cache里
 			n.Requested.MilliCPU -= res.MilliCPU
 			n.Requested.Memory -= res.Memory
 			n.Requested.EphemeralStorage -= res.EphemeralStorage

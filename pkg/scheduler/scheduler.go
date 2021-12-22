@@ -437,6 +437,7 @@ func (sched *Scheduler) assume(assumed *v1.Pod, host string) error {
 	// immediately.
 	assumed.Spec.NodeName = host
 
+	// hantingtodo: 调度完成, 扣减scheduler缓存的资源数据
 	if err := sched.SchedulerCache.AssumePod(assumed); err != nil {
 		klog.ErrorS(err, "scheduler cache AssumePod failed")
 		return err
@@ -454,6 +455,7 @@ func (sched *Scheduler) assume(assumed *v1.Pod, host string) error {
 // We expect this to run asynchronously, so we handle binding metrics internally.
 func (sched *Scheduler) bind(ctx context.Context, fwk framework.Framework, assumed *v1.Pod, targetNode string, state *framework.CycleState) (err error) {
 	defer func() {
+		// hantingtodo: 调度bind结束,
 		sched.finishBinding(fwk, assumed, targetNode, err)
 	}()
 
@@ -461,6 +463,9 @@ func (sched *Scheduler) bind(ctx context.Context, fwk framework.Framework, assum
 	if bound {
 		return err
 	}
+	// hantingtodo: 真正执行bind, 即向apiserver发送{podName, nodeName}. 则可以认为本次调度结束.
+	// hantingtodo: 后续就是node上的kubelet watch到, 然后真正在node上创建了.
+	// hantingfixme: 但如果实际创建失败, 会怎样? 如何做回滚?
 	bindStatus := fwk.RunBindPlugins(ctx, state, assumed, targetNode)
 	if bindStatus.IsSuccess() {
 		return nil
@@ -529,6 +534,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 
 	schedulingCycleCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	// hantingtodo: 调度第一步: 真正执行选node, 选出来1个node, 放在scheduleResult里,
 	scheduleResult, err := sched.Algorithm.Schedule(schedulingCycleCtx, sched.Extenders, fwk, state, pod)
 	if err != nil {
 		// Schedule() may have failed because the pod would not fit on any host, so we try to
@@ -571,6 +577,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	assumedPodInfo := podInfo.DeepCopy()
 	assumedPod := assumedPodInfo.Pod
 	// assume modifies `assumedPod` by setting NodeName=scheduleResult.SuggestedHost
+	// hantingtodo: 调度第二步: 扣减调度缓存的nc资源
 	err = sched.assume(assumedPod, scheduleResult.SuggestedHost)
 	if err != nil {
 		metrics.PodScheduleError(fwk.ProfileName(), metrics.SinceInSeconds(start))
@@ -623,6 +630,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	}
 
 	// bind the pod to its host asynchronously (we can do this b/c of the assumption step above).
+	// hantingtodo: 调度第三步: 调用接口执行bind
 	go func() {
 		bindingCycleCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
@@ -659,6 +667,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 		}
 
 		// Run "prebind" plugins.
+		// hantingfixme: 实际上具体会有哪些动作需要放到preBind里?
 		preBindStatus := fwk.RunPreBindPlugins(bindingCycleCtx, state, assumedPod, scheduleResult.SuggestedHost)
 		if !preBindStatus.IsSuccess() {
 			metrics.PodScheduleError(fwk.ProfileName(), metrics.SinceInSeconds(start))
@@ -676,6 +685,8 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 			return
 		}
 
+		// hantingtodo: 执行bind?
+		// hantingfixme: 但这里的bind貌似又不是真正让node来创建pod. 具体是啥?
 		err := sched.bind(bindingCycleCtx, fwk, assumedPod, scheduleResult.SuggestedHost, state)
 		if err != nil {
 			metrics.PodScheduleError(fwk.ProfileName(), metrics.SinceInSeconds(start))
@@ -741,6 +752,8 @@ func (sched *Scheduler) skipPodSchedule(fwk framework.Framework, pod *v1.Pod) bo
 	// Case 2: pod that has been assumed could be skipped.
 	// An assumed pod can be added again to the scheduling queue if it got an update event
 	// during its previous scheduling cycle but before getting assumed.
+	// hantingtodo: 这里pod的几个状态, 如果是assumed代表啥? 是已经经过调度阶段了, 决定好开到哪个node上了么? 但还没有真正在node上开?
+	// 如果真正在node上bind, 失败怎么办? 是会修改这个pod的状态么?
 	isAssumed, err := sched.SchedulerCache.IsAssumedPod(pod)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("failed to check whether pod %s/%s is assumed: %v", pod.Namespace, pod.Name, err))

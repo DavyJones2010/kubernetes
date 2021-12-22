@@ -113,6 +113,7 @@ func (pl *ServiceAffinity) createPreFilterState(pod *v1.Pod) (*preFilterState, e
 		return nil, fmt.Errorf("a pod is required to calculate service affinity preFilterState")
 	}
 	// Store services which match the pod.
+	// hantingtodo: 根据pod上的label, 获取到对应的service
 	matchingPodServices, err := helper.GetPodServices(pl.serviceLister, pod)
 	if err != nil {
 		return nil, fmt.Errorf("listing pod services: %w", err)
@@ -120,10 +121,12 @@ func (pl *ServiceAffinity) createPreFilterState(pod *v1.Pod) (*preFilterState, e
 	selector := createSelectorFromLabels(pod.Labels)
 
 	// consider only the pods that belong to the same namespace
+	// hantingtodo: 这种情况下获取到的nodeInfos与 genericScheduler.nodeInfoSnapshot.NodeInfos().List() 区别是?
 	nodeInfos, err := pl.sharedLister.NodeInfos().List()
 	if err != nil {
 		return nil, fmt.Errorf("listing nodeInfos: %w", err)
 	}
+	// hantingtodo: 根据要调度的pod上的label+namespace, 获取到与label match的pods
 	matchingPodList := filterPods(nodeInfos, selector, pod.Namespace)
 
 	return &preFilterState{

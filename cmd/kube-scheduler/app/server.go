@@ -133,6 +133,7 @@ func runCommand(cmd *cobra.Command, opts *options.Options, registryOptions ...Op
 		return err
 	}
 
+	// hantingtodo: 调度入口
 	return Run(ctx, cc, sched)
 }
 

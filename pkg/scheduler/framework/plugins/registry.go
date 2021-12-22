@@ -56,6 +56,7 @@ func NewInTreeRegistry() runtime.Registry {
 		EnableReadWriteOncePod:             feature.DefaultFeatureGate.Enabled(features.ReadWriteOncePod),
 	}
 
+	// hantingtodo: 这里将所有调度所需的plugin注册进来
 	return runtime.Registry{
 		selectorspread.Name:      selectorspread.New,
 		imagelocality.Name:       imagelocality.New,
